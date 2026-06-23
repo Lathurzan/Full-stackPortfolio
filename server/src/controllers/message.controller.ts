@@ -25,3 +25,12 @@ export const createMessage = async (req: Request, res: Response) => {
   }
 };
 
+export const deleteMessage = async (req: Request, res: Response) => {
+  try {
+    await Message.findByIdAndDelete(req.params.id);
+    return successResponse(res, "Message deleted", null);
+  } catch (err) {
+    return errorResponse(res, "Failed to delete message", 500);
+  }
+};
+

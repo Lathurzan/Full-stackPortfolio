@@ -3,27 +3,28 @@ import { env } from "./env.js";
 
 export const connectDB = async () => {
   try {
-    // If MONGO_URI is not set or left as a placeholder, skip connecting in dev.
-    if (!env.MONGO_URI || env.MONGO_URI.includes("your_mongodb_atlas_url") || env.MONGO_URI.trim() === "") {
-      console.warn(
-        "MONGO_URI not configured or is a placeholder — skipping MongoDB connection (development mode)."
-      );
-      return;
+    // Use configured MONGO_URI when provided. In development, fall back to a
+    // local MongoDB instance so write operations persist without requiring
+    // the environment to be fully configured.
+    let uri = env.MONGO_URI;
+    if (!uri || uri.includes("your_mongodb_atlas_url") || uri.trim() === "") {
+      if (env.NODE_ENV === "production") {
+        console.error("MONGO_URI not configured in production — aborting DB connect.");
+        throw new Error("MONGO_URI not configured");
+      }
+      uri = "mongodb://127.0.0.1:27017/portfolio";
+      console.warn(`MONGO_URI not set; falling back to local MongoDB at ${uri}`);
     }
 
     // Validate scheme
-    if (!env.MONGO_URI.startsWith("mongodb://") && !env.MONGO_URI.startsWith("mongodb+srv://")) {
-      const err = new Error("MONGO_URI has invalid scheme. Must start with mongodb:// or mongodb+srv://");
-      throw err;
+    if (!uri.startsWith("mongodb://") && !uri.startsWith("mongodb+srv://")) {
+      throw new Error("MONGO_URI has invalid scheme. Must start with mongodb:// or mongodb+srv://");
     }
 
-  const conn = await mongoose.connect(env.MONGO_URI);
-
-  console.log(`MongoDB connected: ${conn.connection.host}`);
+    const conn = await mongoose.connect(uri);
+    console.log(`MongoDB connected: ${conn.connection.host}`);
   } catch (error) {
     console.error("MongoDB connection failed:", error);
-    // In production we should exit, but during local dev prefer to continue
-    // so the server can run without a database for frontend/dev work.
     if (env.NODE_ENV === "production") {
       process.exit(1);
     }
