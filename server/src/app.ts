@@ -13,6 +13,7 @@ import projectRoutes from "./routes/project.routes.js";
 import blogRoutes from "./routes/blog.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import casestudyRoutes from "./routes/casestudy.routes.js";
+import skillRoutes from "./routes/skill.routes.js";
 
 const app = express();
 
@@ -45,6 +46,7 @@ app.use("/api/projects", projectRoutes);
 app.use("/api/blogs", blogRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/casestudies", casestudyRoutes);
+app.use("/api/skills", skillRoutes);
 
 // serve uploaded files
 // Serve uploaded files and allow cross-origin embedding from the client app.

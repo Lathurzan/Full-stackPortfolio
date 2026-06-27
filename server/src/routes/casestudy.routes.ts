@@ -1,4 +1,4 @@
-import express from "express";
+import { Router } from "express";
 import {
   createCaseStudy,
   getCaseStudies,
@@ -7,7 +7,7 @@ import {
   deleteCaseStudy,
 } from "../controllers/casestudy.controller.js";
 
-const router = express.Router();
+const router = Router();
 
 router.get("/", getCaseStudies);
 router.get("/:id", getCaseStudyById);
