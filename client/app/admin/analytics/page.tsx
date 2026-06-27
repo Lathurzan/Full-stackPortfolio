@@ -25,7 +25,13 @@ export default function AdminAnalyticsPage() {
       setLoading(true);
       try {
         const res = await fetch("/api/analytics", { credentials: "include" });
-        const json = await res.json();
+        const text = await res.text();
+        let json: any = null;
+        try {
+          json = text ? JSON.parse(text) : null;
+        } catch (parseErr) {
+          console.warn("Failed to parse analytics response as JSON", parseErr, text.slice(0, 200));
+        }
         if (!mounted) return;
         if (json && json.data) setData(json.data);
       } catch (err) {

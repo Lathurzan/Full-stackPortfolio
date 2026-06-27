@@ -17,19 +17,18 @@ export const getAbout = async (_req: Request, res: Response) => {
 
 export const updateAbout = async (req: Request, res: Response) => {
   try {
-  const { title, body, image } = req.body;
+  const { title, body } = req.body;
   if (!body) return errorResponse(res, "Missing about body", 400);
 
-    // Keep a single document: create if none, else update latest
+    // Keep a single document in About: create if none, else update latest
     const existing = await About.findOne().sort({ updatedAt: -1 });
     if (!existing) {
-      const created = await About.create({ title, body, image });
+      const created = await About.create({ title, body });
       return successResponse(res, "About created", created, 201);
     }
 
     existing.title = title ?? existing.title;
     existing.body = body;
-    existing.image = image ?? existing.image;
     await existing.save();
     return successResponse(res, "About updated", existing);
   } catch (err) {

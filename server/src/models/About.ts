@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 export interface IAbout extends mongoose.Document {
   title?: string;
   body: string;
-  image?: string;
 }
 
 const aboutSchema = new mongoose.Schema<IAbout>(
@@ -15,10 +14,6 @@ const aboutSchema = new mongoose.Schema<IAbout>(
     body: {
       type: String,
       required: true,
-    },
-    image: {
-      type: String,
-      trim: true,
     },
   },
   { timestamps: true }

@@ -9,7 +9,9 @@ const links = [
   { name: "Analytics", href: "/admin/analytics" },
   { name: "About", href: "/admin/about" },
   { name: "Case Studies", href: "/admin/casestudies" },
-  { name: "Skills", href: "/admin/skills" }
+  { name: "Skills", href: "/admin/skills" },
+  { name: "Work Experience", href: "/admin/work-experience" },
+  { name: "Resume", href: "/admin/resume" }
 ];
 
 export default function AdminSidebar() {

@@ -14,6 +14,9 @@ import blogRoutes from "./routes/blog.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";
 import casestudyRoutes from "./routes/casestudy.routes.js";
 import skillRoutes from "./routes/skill.routes.js";
+import workExperienceRoutes from "./routes/workExperience.routes.js";
+import profileRoutes from "./routes/profile.routes.js";
+import resumeRoutes from "./routes/resume.routes.js";
 
 const app = express();
 
@@ -47,6 +50,9 @@ app.use("/api/blogs", blogRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/casestudies", casestudyRoutes);
 app.use("/api/skills", skillRoutes);
+app.use("/api/work-experiences", workExperienceRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/resume", resumeRoutes);
 
 // serve uploaded files
 // Serve uploaded files and allow cross-origin embedding from the client app.

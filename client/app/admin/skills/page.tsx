@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { skills as defaultSkills } from "@/data/skills";
 import { skillService } from "@/services/skill.service";
 
 export default function AdminSkillsPage() {
-  const [groups, setGroups] = useState<any[]>(defaultSkills);
+  const [groups, setGroups] = useState<any[]>([]);
   const [newCategory, setNewCategory] = useState("");
   const [newItems, setNewItems] = useState<Record<number, string>>({});
 
@@ -74,9 +73,13 @@ export default function AdminSkillsPage() {
     (async () => {
       try {
         const res = await skillService.getAll();
-        const data = res?.data ?? res ?? null;
+        const data = res?.data ?? res ?? [];
         if (!mounted) return;
-        if (data && Array.isArray(data) && data.length > 0) setGroups(data);
+        if (Array.isArray(data)) {
+          // normalize items to arrays to avoid runtime errors
+          const normalized = data.map((g: any) => ({ ...(g || {}), items: Array.isArray(g?.items) ? g.items : [] }));
+          setGroups(normalized);
+        }
       } catch (err) {
         // keep default skills
       }
@@ -92,14 +95,14 @@ export default function AdminSkillsPage() {
 
       <div className="grid grid-cols-2 gap-6">
         {groups.map((g, gi) => (
-          <div key={g.category} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
+          <div key={g._id || g.id || g.category || gi} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="font-semibold">{g.category}</h3>
               <button onClick={() => removeGroup(gi)} className="text-sm text-red-400 hover:text-red-300">Delete</button>
             </div>
             <ul className="mb-3 flex flex-wrap gap-2">
-              {g.items.map((it: any, i: number) => (
-                <li key={it + i} className="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1 text-sm">
+              {(g.items || []).map((it: any, i: number) => (
+                <li key={(g._id || g.id || g.category || gi) + "-" + it + "-" + i} className="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1 text-sm">
                   {it}
                   <button onClick={() => removeItem(gi, i)} className="text-xs text-red-400">x</button>
                 </li>

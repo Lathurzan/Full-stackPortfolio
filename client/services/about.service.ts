@@ -1,8 +1,9 @@
-import { api } from "./api";
+import { api, publicApi } from "./api";
 
 export const fetchAbout = async () => {
   try {
-    const res = await api.get("/about");
+    // Public read should not include credentials
+    const res = await publicApi.get("/about");
     return res.data;
   } catch (err) {
     console.warn("fetchAbout failed:", err);
@@ -12,6 +13,7 @@ export const fetchAbout = async () => {
 
 export const updateAbout = async (payload: { title?: string; body: string; image?: string }) => {
   try {
+    // Update requires auth
     const res = await api.put("/about", payload);
     return res.data;
   } catch (err) {
