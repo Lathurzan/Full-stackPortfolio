@@ -20,7 +20,23 @@ import resumeRoutes from "./routes/resume.routes.js";
 
 const app = express();
 
-app.use(helmet());
+// ✅ Helmet with X-Frame-Options disabled so PDF proxy can be embedded in iframe
+app.use(
+  helmet({
+    frameguard: false,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https://res.cloudinary.com"],
+        // ✅ Allow framing from your frontend origin
+        frameAncestors: ["'self'", "http://localhost:3000", process.env.CLIENT_URL || "http://localhost:3000"],
+      },
+    },
+  })
+);
+
 app.use(corsOptions);
 app.use(morgan("dev"));
 app.use(express.json());
@@ -28,17 +44,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.get("/", (req, res) => {
-  res.json({
-    success: true,
-    message: "Portfolio API is running",
-  });
+  res.json({ success: true, message: "Portfolio API is running" });
 });
 
 app.get("/api/health", (req, res) => {
-  res.json({
-    success: true,
-    message: "Server healthy",
-  });
+  res.json({ success: true, message: "Server healthy" });
 });
 
 app.use("/api/auth", authRoutes);
@@ -54,22 +64,13 @@ app.use("/api/work-experiences", workExperienceRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/resume", resumeRoutes);
 
-// serve uploaded files
-// Serve uploaded files and allow cross-origin embedding from the client app.
-// This sets permissive headers only for files under /uploads so the Next.js dev
-// server at a different origin (localhost:3000) can load images without
-// Cross-Origin-Resource-Policy / CORS errors.
 app.use((req, res, next) => {
-  // Only apply to uploads requests
   if (req.path.startsWith("/uploads") || req.originalUrl.startsWith("/uploads")) {
-    // Allow the specific client origin if configured, otherwise allow all.
     const origin = process.env.CLIENT_URL || "*";
     res.setHeader("Access-Control-Allow-Origin", origin);
     res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type,Range");
-    // Allow cross-origin embedding (prevents CORP blocked loads)
     res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
-    // short-circuit OPTIONS preflight for uploads
     if (req.method === "OPTIONS") return res.sendStatus(204);
   }
   next();
@@ -79,7 +80,6 @@ app.use(
   "/uploads",
   express.static("uploads", {
     setHeaders: (res) => {
-      // Ensure static responses explicitly include CORP for browsers that enforce it
       const origin = process.env.CLIENT_URL || "*";
       res.setHeader("Access-Control-Allow-Origin", origin);
       res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");

@@ -1,168 +1,279 @@
 import type { Request, Response } from "express";
-import path from "path";
 import fs from "fs";
+import path from "path";
+import http from "http";
+import https from "https";
 import Profile from "../models/profile.js";
 import cloudinary from "../config/cloudinary.js";
 import { successResponse, errorResponse } from "../utils/response.js";
 
 /**
- * Upload resume (multipart file) or accept direct URL in body.url and persist to Profile.resume
+ * Upload Resume
  */
-export const uploadResume = async (req: Request, res: Response): Promise<Response> => {
+export const uploadResume = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   try {
-    // If a URL is provided directly in body, use it and persist
+    // -------------------------
+    // Direct URL
+    // -------------------------
     const directUrl = req.body?.url || req.body?.resume || null;
+
     if (directUrl) {
-      // normalize a direct URL: if relative, prefix with host/protocol
-      let normalized = directUrl as string;
-      if (normalized.startsWith("/")) {
-        const host = req.get("host");
-        const protocol = req.protocol;
-        normalized = `${protocol}://${host}${normalized}`;
-      } else if (!/^https?:\/\//i.test(normalized)) {
-        // treat as filename -> assume uploads folder
-        const host = req.get("host");
-        const protocol = req.protocol;
-        normalized = `${protocol}://${host}/uploads/${normalized}`;
+      let resumeUrl = String(directUrl);
+
+      if (resumeUrl.startsWith("/")) {
+        resumeUrl = `${req.protocol}://${req.get("host")}${resumeUrl}`;
+      } else if (!/^https?:\/\//i.test(resumeUrl)) {
+        resumeUrl = `${req.protocol}://${req.get(
+          "host"
+        )}/uploads/${resumeUrl}`;
       }
 
-      const updated = await Profile.findOneAndUpdate(
+      const profile = await Profile.findOneAndUpdate(
         {},
-        { $set: { resume: normalized } },
-        { returnDocument: "after", upsert: true }
+        { $set: { resume: resumeUrl } },
+        {
+          new: true,
+          upsert: true,
+        }
       );
 
-      return successResponse(res, "Resume saved", { resume: (updated as any)?.resume });
+      return successResponse(res, "Resume saved", {
+        resume: (profile as any).resume,
+      });
     }
 
-    // Otherwise expect a multipart file in req.file (multer)
+    // -------------------------
+    // Upload File
+    // -------------------------
     const file = (req as any).file;
-    if (!file) return errorResponse(res, "No file uploaded", 400);
 
-    // Try Cloudinary if configured
-    const cloudConfigured = !!(process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET && process.env.CLOUDINARY_CLOUD_NAME);
-    let url: string | null = null;
-
-  if (cloudConfigured) {
-      const tempPath = file.path as string;
-      try {
-        const result: any = await cloudinary.uploader.upload(tempPath, {
-          folder: "portfolio/resumes",
-          use_filename: true,
-          unique_filename: false,
-          resource_type: "raw",
-          type: "upload",
-          format: "pdf",
-        });
-
-        // remove temp file
-    try { fs.unlinkSync(tempPath); } catch (e) { /* ignore */ }
-
-    url = result?.secure_url || result?.url || null;
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.warn("Cloudinary upload failed, falling back to local storage", e);
-      }
+    if (!file) {
+      return errorResponse(res, "No file uploaded", 400);
     }
 
-  // Fallback: save locally
-    if (!url) {
-      const uploadsDir = path.join(process.cwd(), "uploads");
-      if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-      const tempPath = file.path as string;
-      const originalName = file.originalname as string;
-      const destPath = path.join(uploadsDir, `${Date.now()}-${originalName}`);
-      fs.renameSync(tempPath, destPath);
+    // -------------------------
+    // Always store resume locally so the proxy can serve it directly.
+    // Cloudinary raw-resource delivery URLs require account-level auth tokens
+    // to fetch server-side, which makes proxying impossible without that key.
+    // Local storage is simpler, reliable, and the proxy serves it correctly.
+    // -------------------------
+    let resumeUrl: string | null = null;
 
-      const rel = `/uploads/${path.basename(destPath)}`;
-      const host = req.get("host");
-      const protocol = req.protocol;
-      url = `${protocol}://${host}${rel}`;
+    const uploadsDir = path.join(process.cwd(), "uploads");
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const updated = await Profile.findOneAndUpdate(
+    const filename = `${Date.now()}-${file.originalname}`;
+    const destination = path.join(uploadsDir, filename);
+    fs.renameSync(file.path, destination);
+    resumeUrl = `${req.protocol}://${req.get("host")}/uploads/${filename}`;
+
+    const profile = await Profile.findOneAndUpdate(
       {},
-      { $set: { resume: url } },
-      { returnDocument: "after", upsert: true }
+      {
+        $set: {
+          resume: resumeUrl,
+        },
+      },
+      {
+        new: true,
+        upsert: true,
+      }
     );
 
-    return successResponse(res, "Resume uploaded", { resume: (updated as any)?.resume, url });
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(err);
+    return successResponse(res, "Resume uploaded", {
+      resume: (profile as any).resume,
+    });
+  } catch (error) {
+    console.error(error);
+
     return errorResponse(res, "Failed to upload resume", 500);
   }
 };
 
-export const getResume = async (_req: Request, res: Response): Promise<Response> => {
+/**
+ * Get Resume
+ */
+export const getResume = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   try {
-    // Use request to compute absolute URL when needed
-    const req = _req as Request;
     const profile = await Profile.findOne();
+
     let resume = (profile as any)?.resume || null;
-    if (!resume) return successResponse(res, "No resume set", null);
+
+    if (!resume) {
+      return successResponse(res, "No resume found", {
+        resume: null,
+      });
+    }
 
     if (typeof resume === "string") {
       if (resume.startsWith("/")) {
-        const host = req.get("host");
-        const protocol = req.protocol;
-        resume = `${protocol}://${host}${resume}`;
+        resume = `${req.protocol}://${req.get("host")}${resume}`;
       } else if (!/^https?:\/\//i.test(resume)) {
-        const host = req.get("host");
-        const protocol = req.protocol;
-        resume = `${protocol}://${host}/uploads/${resume}`;
+        resume = `${req.protocol}://${req.get(
+          "host"
+        )}/uploads/${resume}`;
       }
     }
 
-    return successResponse(res, "Resume fetched", { resume });
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(err);
+    return successResponse(res, "Resume fetched", {
+      resume,
+    });
+  } catch (error) {
+    console.error(error);
+
     return errorResponse(res, "Failed to fetch resume", 500);
   }
 };
 
-export const deleteResume = async (_req: Request, res: Response): Promise<Response> => {
+/**
+ * Delete Resume
+ */
+export const deleteResume = async (
+  req: Request,
+  res: Response
+): Promise<Response> => {
   try {
-    const req = _req as Request;
     const profile = await Profile.findOne();
-    if (!profile) return successResponse(res, "No resume set", null);
 
-    const resume = (profile as any).resume as string | undefined | null;
-    if (resume && typeof resume === "string") {
-      // local file
-      const uploadsIndex = resume.indexOf("/uploads/");
-      if (uploadsIndex !== -1) {
-        const filename = resume.substring(uploadsIndex + "/uploads/".length);
-        const full = path.join(process.cwd(), "uploads", filename);
-        try {
-          if (fs.existsSync(full)) fs.unlinkSync(full);
-        } catch (e) {
-          // ignore filesystem errors
+    if (!profile) {
+      return successResponse(res, "No resume found", {
+        resume: "",
+      });
+    }
+
+    const resume = (profile as any).resume as string | null;
+
+    if (resume) {
+      // Local File
+      if (resume.includes("/uploads/")) {
+        const parts = resume.split("/uploads/");
+        const filename = parts[1];
+
+        if (filename) {
+          const filepath = path.join(
+            process.cwd(),
+            "uploads",
+            filename
+          );
+
+          try {
+            if (fs.existsSync(filepath)) {
+              fs.unlinkSync(filepath);
+            }
+          } catch {}
         }
-      } else if (resume.includes("res.cloudinary.com")) {
-        // attempt to delete Cloudinary raw resource (best-effort)
-        try {
-          // extract public id: match '/upload/(v1234/)?public_id(.ext)?'
-          const m = resume.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-zA-Z0-9]+)?(?:\?.*)?$/);
-          const publicId = m && m[1] ? m[1] : null;
-          if (publicId) {
-            await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
-          }
-        } catch (e) {
-          // ignore cloudinary deletion errors (not fatal)
+      }
+
+      // Cloudinary
+      if (resume.includes("res.cloudinary.com")) {
+        const match = resume.match(
+          /\/upload\/(?:v\d+\/)?(.+?)(?:\.[^./?]+)?$/
+        );
+
+        if (match?.[1]) {
+          try {
+            await cloudinary.uploader.destroy(match[1], {
+              resource_type: "raw",
+            });
+          } catch {}
         }
       }
     }
 
-    // clear resume field and save
     (profile as any).resume = "";
+
     await profile.save();
 
-    return successResponse(res, "Resume deleted", { resume: "" });
-  } catch (err) {
-    // eslint-disable-next-line no-console
-    console.error(err);
+    return successResponse(res, "Resume deleted", {
+      resume: "",
+    });
+  } catch (error) {
+    console.error(error);
+
     return errorResponse(res, "Failed to delete resume", 500);
+  }
+};
+
+/**
+ * Proxy Resume — stream local or remote resume to the client and set headers
+ * that allow embedding. Returns an HTML fallback when the remote responds
+ * 401/403 so the browser doesn't log a network error.
+ */
+export const proxyResume = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const profile = await Profile.findOne();
+    const resume = (profile as any)?.resume as string | null;
+
+    if (!resume) {
+      res.status(404).json({ message: "No resume found" });
+      return;
+    }
+
+    // Build absolute URL for stored resume
+    let fileUrl = resume.startsWith("http") ? resume : `${req.protocol}://${req.get("host")}${resume}`;
+
+    // If file is stored locally under /uploads, serve it directly
+    if (fileUrl.includes("/uploads/")) {
+      const filename = path.basename(fileUrl);
+      const full = path.join(process.cwd(), "uploads", filename);
+      if (fs.existsSync(full)) {
+        res.setHeader("Content-Type", "application/pdf");
+        res.setHeader("Content-Disposition", "inline; filename=resume.pdf");
+        res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+        res.sendFile(full);
+        return;
+      }
+    }
+
+    // For Cloudinary: generate a signed URL using the Cloudinary SDK.
+    // A signed URL embeds a request signature that bypasses Cloudinary's
+    // strict delivery / access-control settings (which cause 401 on plain URLs).
+
+    // Cloudinary raw resources require an account-level auth-token key for
+    // server-side delivery (all signed URL variants return 401 without it).
+    // Cloudinary also sets X-Frame-Options: SAMEORIGIN which blocks iframes.
+    // For legacy Cloudinary URLs already in the database, return a friendly
+    // HTML page with an "Open in new tab" link — no 401/frame-block error.
+    // For NEW uploads we always use local storage so this path is rarely hit.
+    if (fileUrl.includes("res.cloudinary.com")) {
+      const safeUrl = fileUrl.replace(/"/g, "%22");
+      const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resume</title></head><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:2rem;color:#111;background:#fff"><p style="font-size:1rem">Inline preview is unavailable for this resume. <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline">Open in new tab ↗</a></p><p style="font-size:.85rem;color:#555;margin-top:1rem">To enable inline preview, delete the current resume and re-upload it — new uploads are stored locally and preview instantly.</p></body></html>`;
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      res.status(200).send(html);
+      return;
+    }
+
+    const getter = fileUrl.startsWith("https") ? https.get : http.get;
+
+    getter(fileUrl, (fileRes: any) => {
+      if (!fileRes.statusCode || fileRes.statusCode >= 400) {
+        const originalUrl = String(resume.startsWith("http") ? resume : `${req.protocol}://${req.get("host")}${resume}`);
+        const safeUrl = originalUrl.replace(/"/g, "%22");
+        const html = `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Resume</title></head><body style="font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:2rem;color:#111;background:#fff"><p>Unable to preview resume inline. <a href="${safeUrl}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline">Open in new tab</a></p></body></html>`;
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        res.status(200).send(html);
+        return;
+      }
+
+      const remoteCt = (fileRes.headers && fileRes.headers["content-type"]) || "application/pdf";
+      res.setHeader("Content-Type", remoteCt);
+      res.setHeader("Content-Disposition", "inline; filename=resume.pdf");
+      res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
+      fileRes.pipe(res);
+    }).on("error", (e: any) => {
+      console.error("Proxy error:", e);
+      if (!res.headersSent) res.status(500).json({ message: "Failed to stream resume" });
+    });
+  } catch (err) {
+    console.error(err);
+    if (!res.headersSent) res.status(500).json({ message: "Failed to proxy resume" });
   }
 };

@@ -66,87 +66,12 @@ export default function Navbar() {
             <LinkedInIcon className="h-5 w-5 text-slate-300 hover:text-white" />
           </Link>
 
-          <button
-            onClick={async (e) => {
-              e.preventDefault()
-              try {
-                const apiEnv = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "")
-                const candidates: string[] = []
-                if (apiEnv) {
-                  candidates.push(`${apiEnv}/resume`)
-                  if (!/\/api(\/|$)/.test(apiEnv)) candidates.push(`${apiEnv}/api/resume`)
-                }
-                // common local dev fallbacks (backend often runs on 5001 or 5000)
-                candidates.push(
-                  `http://localhost:5001/api/resume`,
-                )
-                // try common relative endpoints last (these hit Next.js if no backend)
-                candidates.push(`/resume`)
-
-                let body: any = null
-                let foundUrl: string | null = null
-                for (const url of candidates) {
-                  try {
-                    const r = await fetch(url, { cache: "no-store" })
-                    if (!r.ok) continue
-                    const ct = r.headers.get("content-type") || ""
-                    if (ct.includes("application/json")) {
-                      body = await r.json()
-                      break
-                    }
-                    // if it's not JSON, assume it's a direct file/blob; use response.url if available
-                    foundUrl = r.url || url
-                    break
-                  } catch (e) {
-                    // try next
-                  }
-                }
-
-                if (!body && !foundUrl) {
-                  window.alert("No resume endpoint found (404).")
-                  return
-                }
-
-                let candidate: string | undefined = undefined
-                if (body) {
-                  // project responses are wrapped: { success, message, data }
-                  const payload = body?.data ?? body
-                  if (Array.isArray(payload?.resumes) && payload.resumes.length) candidate = payload.resumes[0]
-                  else if (typeof payload?.resume === "string" && payload.resume) candidate = payload.resume
-                  else if (typeof payload?.url === "string" && payload.url) candidate = payload.url
-                  // backward-compat: some endpoints may return { resume } at top-level
-                  else if (typeof body?.resume === "string" && body.resume) candidate = body.resume
-                }
-
-                // if endpoint returned a file URL directly (non-JSON) use that
-                if (!candidate && foundUrl) candidate = foundUrl
-
-                if (!candidate) {
-                  window.alert("No resume URL found in API response.")
-                  return
-                }
-
-                // normalize candidate to absolute URL
-                let finalUrl = candidate.trim()
-                if (!/^https?:\/\//i.test(finalUrl)) {
-                  const origin = apiEnv || window.location.origin
-                  if (finalUrl.startsWith("/")) finalUrl = `${origin}${finalUrl}`
-                  else finalUrl = `${origin}/uploads/${finalUrl}`
-                }
-
-                // open a viewer route in the Next app which embeds the resume for inline viewing
-                const viewerUrl = `/viewer?url=${encodeURIComponent(finalUrl)}`
-                window.open(viewerUrl, "_blank")
-              } catch (err) {
-                // eslint-disable-next-line no-console
-                console.error(err)
-                window.alert("Unable to open resume")
-              }
-            }}
-            className="rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-blue-500"
-          >
-            Resume
-          </button>
+          <Link
+  href="/resume"
+  className="rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white transition hover:bg-blue-500"
+>
+  Resume
+</Link>
         </div>
 
         <button className="md:hidden">
