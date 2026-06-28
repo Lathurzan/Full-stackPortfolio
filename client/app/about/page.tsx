@@ -32,7 +32,7 @@ export default function AboutPage() {
 
   const title = about?.title || "About Me";
   const body = about?.body || "";
-  const image = about?.image || null;
+  
 
   return (
     <section className="min-h-screen px-6 py-24 md:px-12 lg:px-24">
@@ -44,14 +44,7 @@ export default function AboutPage() {
             <h1 className="text-4xl font-bold md:text-6xl">{title}</h1>
           </div>
 
-          <div className="space-y-6 text-lg leading-8 text-slate-400">
-            {image && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={image} alt="about" className="mb-4 max-h-80 w-full rounded-lg object-cover" />
-            )}
-
-            <div dangerouslySetInnerHTML={{ __html: body }} />
-          </div>
+          <div dangerouslySetInnerHTML={{ __html: body }} />
         </div>
       </div>
     </section>

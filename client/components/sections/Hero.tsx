@@ -58,7 +58,26 @@ function ProfileHero() {
     <>
       <h1 className="text-5xl font-bold tracking-tight md:text-7xl">
         {body ? (
-          body
+          (() => {
+            const words = body.split(" ");
+            // Gradient goes on the first hyphenated word (e.g. "AI-powered").
+            // Falls back to index 1 (2nd word) if no hyphenated word exists.
+            const gradientIdx = (() => {
+              const i = words.findIndex((w) => w.includes("-"));
+              return i !== -1 ? i : Math.min(1, words.length - 1);
+            })();
+            return (
+              <>
+                {words.map((word, i) => (
+                  i === gradientIdx ? (
+                    <span key={i} className="gradient-text">{word} </span>
+                  ) : (
+                    <span key={i}>{word}{i < words.length - 1 ? " " : ""}</span>
+                  )
+                ))}
+              </>
+            );
+          })()
         ) : (
           <>
             Building scalable <span className="gradient-text">AI-powered</span> web applications.
@@ -100,6 +119,49 @@ function ProfileFocus() {
   }, []);
 
   return <>{roleText || "Full-Stack, Backend & AI Systems"}</>;
+}
+
+// Fetches `profile.image` from the backend; falls back to the local SVG.
+function ProfileImage() {
+  const [src, setSrc] = useState("/images/profile/profile.svg");
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const res = await fetchProfile();
+        if (!mounted) return;
+        const profile = res?.data || res;
+        const img: string | undefined = profile?.image;
+        if (img && img.trim()) {
+          // Resolve relative paths (e.g. /uploads/...) to an absolute URL
+          let resolved = img.trim();
+          if (!/^https?:\/\//i.test(resolved)) {
+            const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api").replace(/\/api\/?$/, "");
+            resolved = resolved.startsWith("/")
+              ? `${apiBase}${resolved}`
+              : `${apiBase}/uploads/${resolved}`;
+          }
+          setSrc(resolved);
+        }
+      } catch {
+        // keep fallback
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  return (
+    <Image
+      src={src}
+      alt="Lathurzan Subatharan"
+      width={520}
+      height={620}
+      className="h-[520px] w-full object-cover"
+      loading="eager"
+      priority
+    />
+  );
 }
 
 export default function Hero() {
@@ -236,15 +298,7 @@ export default function Hero() {
 
           <div className="relative rounded-[2rem] border border-slate-800 bg-slate-900/70 p-4 shadow-2xl">
             <div className="overflow-hidden rounded-[1.5rem] border border-slate-800">
-              <Image
-                src="/images/profile/profile.svg"
-                alt="Lathurzan Subatharan"
-                width={520}
-                height={620}
-                className="h-[520px] w-full object-cover"
-                loading="eager"
-                priority
-              />
+              <ProfileImage />
             </div>
 
             <div className="absolute -bottom-6 left-6 right-6 rounded-2xl border border-slate-800 bg-[#0B0F19]/90 p-5 backdrop-blur-xl">
