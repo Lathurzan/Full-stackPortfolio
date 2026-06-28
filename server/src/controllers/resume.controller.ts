@@ -220,13 +220,19 @@ export const proxyResume = async (req: Request, res: Response): Promise<void> =>
     // Build absolute URL for stored resume
     let fileUrl = resume.startsWith("http") ? resume : `${req.protocol}://${req.get("host")}${resume}`;
 
+    // ?dl=1 → attachment (triggers browser download); default → inline (preview)
+    const isDownload = req.query.dl === "1";
+    const disposition = isDownload
+      ? "attachment; filename=Lathurzan-Subatharan-resume.pdf"
+      : "inline; filename=Lathurzan-Subatharan-resume.pdf";
+
     // If file is stored locally under /uploads, serve it directly
     if (fileUrl.includes("/uploads/")) {
       const filename = path.basename(fileUrl);
       const full = path.join(process.cwd(), "uploads", filename);
       if (fs.existsSync(full)) {
         res.setHeader("Content-Type", "application/pdf");
-        res.setHeader("Content-Disposition", "inline; filename=resume.pdf");
+        res.setHeader("Content-Disposition", disposition);
         res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
         res.sendFile(full);
         return;
@@ -265,7 +271,7 @@ export const proxyResume = async (req: Request, res: Response): Promise<void> =>
 
       const remoteCt = (fileRes.headers && fileRes.headers["content-type"]) || "application/pdf";
       res.setHeader("Content-Type", remoteCt);
-      res.setHeader("Content-Disposition", "inline; filename=resume.pdf");
+      res.setHeader("Content-Disposition", disposition);
       res.setHeader("Cross-Origin-Resource-Policy", "cross-origin");
       fileRes.pipe(res);
     }).on("error", (e: any) => {
