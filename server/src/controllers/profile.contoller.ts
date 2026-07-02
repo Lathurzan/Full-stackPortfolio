@@ -22,7 +22,9 @@ export const getProfile = async (
         image: "",
         role: "",
         headerRole: "",
-        subDescription: "",
+  subDescription: "",
+  links: {},
+  customLinks: [],
       });
     }
 
@@ -46,6 +48,7 @@ export const updateProfile = async (
   res: Response
 ): Promise<Response> => {
   try {
+    // Build an update object only from provided properties to allow partial updates
     const {
       title,
       body,
@@ -53,32 +56,32 @@ export const updateProfile = async (
       role,
       headerRole,
       subDescription,
+      links,
+      customLinks,
     } = req.body;
 
-    if (!body || body.trim() === "") {
-      return errorResponse(
-        res,
-        "Profile description is required",
-        400
-      );
+    // If the client explicitly provided `body`, validate it. Otherwise allow partial updates
+    if (Object.prototype.hasOwnProperty.call(req.body, "body")) {
+      if (!body || String(body).trim() === "") {
+        return errorResponse(res, "Profile description is required", 400);
+      }
     }
 
-    const profile = await Profile.findOneAndUpdate(
-      {},
-      {
-        title,
-        body,
-        image,
-        role,
-        headerRole,
-        subDescription,
-      },
-      {
-        new: true,
-        upsert: true,
-        runValidators: true,
-      }
-    );
+    const update: any = {};
+    if (Object.prototype.hasOwnProperty.call(req.body, "title")) update.title = title;
+    if (Object.prototype.hasOwnProperty.call(req.body, "body")) update.body = body;
+    if (Object.prototype.hasOwnProperty.call(req.body, "image")) update.image = image;
+    if (Object.prototype.hasOwnProperty.call(req.body, "role")) update.role = role;
+    if (Object.prototype.hasOwnProperty.call(req.body, "headerRole")) update.headerRole = headerRole;
+    if (Object.prototype.hasOwnProperty.call(req.body, "subDescription")) update.subDescription = subDescription;
+    if (Object.prototype.hasOwnProperty.call(req.body, "links")) update.links = links || {};
+    if (Object.prototype.hasOwnProperty.call(req.body, "customLinks")) update.customLinks = customLinks || [];
+
+    const profile = await Profile.findOneAndUpdate({}, update, {
+      new: true,
+      upsert: true,
+      runValidators: true,
+    });
 
     return successResponse(
       res,

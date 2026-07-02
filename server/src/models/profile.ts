@@ -9,6 +9,14 @@ export interface IProfile extends Document {
   resume: string;
   resumes: string[];
   subDescription: string;
+  links?: {
+    github?: string;
+    linkedin?: string;
+    instagram?: string;
+    youtube?: string;
+    kaggle?: string;
+  };
+  customLinks?: Array<{ name: string; url: string; icon?: string }>;
 }
 
 const profileSchema = new Schema<IProfile>(
@@ -58,6 +66,26 @@ const profileSchema = new Schema<IProfile>(
       type: String,
       default: "",
       trim: true,
+    },
+    links: {
+      type: {
+        github: { type: String, default: "", trim: true },
+        linkedin: { type: String, default: "", trim: true },
+        instagram: { type: String, default: "", trim: true },
+        youtube: { type: String, default: "", trim: true },
+        kaggle: { type: String, default: "", trim: true },
+      },
+      default: {},
+    },
+    customLinks: {
+      type: [
+        {
+          name: { type: String, default: "", trim: true },
+          url: { type: String, default: "", trim: true },
+          icon: { type: String, default: "", trim: true },
+        },
+      ],
+      default: [],
     },
   },
   {
