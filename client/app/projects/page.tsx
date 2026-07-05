@@ -4,7 +4,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
 export default async function ProjectsPage() {
   const res = await fetch(`${API_URL}/projects`);
-  const projects = (res.ok && (await res.json())?.data) || [];
+  const all = (res.ok && (await res.json())?.data) || [];
+  // exclude draft projects from the public listing
+  const projects = Array.isArray(all) ? all.filter((p: any) => (p?.status || "Published") !== "Draft") : [];
 
   return (
     <section className="min-h-screen px-6 py-24 md:px-12 lg:px-24">

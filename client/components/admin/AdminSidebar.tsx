@@ -2,16 +2,16 @@ import Link from "next/link";
 
 const links = [
   { name: "Dashboard", href: "/admin" },
-  { name: "Profile", href: "/admin/profile" },
+  { name: "Analytics", href: "/admin/analytics" },
+  { name: "Messages", href: "/admin/messages" },
   { name: "Projects", href: "/admin/projects" },
   { name: "Blogs", href: "/admin/blogs" },
-  { name: "Messages", href: "/admin/messages" },
-  { name: "Analytics", href: "/admin/analytics" },
-  { name: "About", href: "/admin/about" },
   { name: "Case Studies", href: "/admin/casestudies" },
   { name: "Skills", href: "/admin/skills" },
   { name: "Work Experience", href: "/admin/work-experience" },
   { name: "Resume", href: "/admin/resume" },
+  { name: "Profile", href: "/admin/profile" },
+  { name: "About", href: "/admin/about" },
   { name: "Links", href: "/admin/links" }
 ];
 

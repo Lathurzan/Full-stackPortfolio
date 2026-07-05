@@ -10,6 +10,7 @@ interface Props {
 
 export default function ProjectsList({ projects, apiUrl }: Props) {
   const [filter, setFilter] = useState<string>("All");
+  const [selected, setSelected] = useState<any | null>(null);
 
   const categories = [
     "All",
@@ -62,10 +63,10 @@ export default function ProjectsList({ projects, apiUrl }: Props) {
         const src = img && img.startsWith('/uploads') && apiUrl ? (apiUrl.replace(/\/api\/?$/, '') + img) : img;
 
         return (
-          <Link
+          <div
             key={project._id || project.slug || `project-${i}`}
-            href={`/projects/${project.slug || project._id || i}`}
-            className="group rounded-3xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-blue-500/50"
+            onClick={() => setSelected(project)}
+            className="group cursor-pointer rounded-3xl border border-slate-800 bg-slate-900/60 p-6 transition hover:border-blue-500/50"
           >
             {src ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -83,7 +84,17 @@ export default function ProjectsList({ projects, apiUrl }: Props) {
                 <span key={`${tech || 'tech'}-${ti}`} className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">{tech}</span>
               ))}
             </div>
-          </Link>
+
+            <div className="mt-6">
+              <Link
+                href={`/projects/${project.slug || project._id || i}`}
+                className="inline-block rounded bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-500"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Learn more
+              </Link>
+            </div>
+          </div>
         );
       })}
       </div>

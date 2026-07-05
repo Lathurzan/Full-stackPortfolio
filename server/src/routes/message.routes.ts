@@ -7,8 +7,8 @@ const router = express.Router();
 // Public: create message (contact form)
 router.post("/", createMessage);
 
-// Admin: list messages
-router.get("/", protect, listMessages);
+// List messages (made public so UI can fetch messages)
+router.get("/", listMessages);
 // Admin: delete message
 router.delete("/:id", protect, deleteMessage);
 

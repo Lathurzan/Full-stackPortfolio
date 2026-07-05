@@ -6,8 +6,14 @@ export const fetchLinks = async () => {
   const res = await publicApi.get(`/profile`);
   return res.data;
   } catch (err: any) {
-    console.error("fetchLinks error:", err?.message || err);
-    return { success: false, message: err?.message || "Network error", data: null };
+    // Log detailed error for debugging (status, url, response)
+    console.error("fetchLinks error:", {
+      message: err?.message,
+      status: err?.response?.status,
+      url: err?.config?.url,
+      data: err?.response?.data,
+    });
+    throw err;
   }
 };
 

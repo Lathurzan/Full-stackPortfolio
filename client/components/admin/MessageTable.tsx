@@ -1,10 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { messageService } from "@/services/message.service";
 
 export default function MessageTable({ initial = [] }: { initial?: Array<any> }) {
   const [messages, setMessages] = useState(initial);
+
+  // keep internal state synced when the parent `initial` prop changes
+  useEffect(() => {
+    setMessages(initial || []);
+  }, [initial]);
   const [deletingIds, setDeletingIds] = useState<string[]>([]);
 
   const handleDelete = async (id: string) => {

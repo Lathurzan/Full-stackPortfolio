@@ -11,7 +11,8 @@ export const messageService = {
       }>;
     } catch (err) {
       console.warn("messageService.list failed:", err);
-      return [];
+      // rethrow so callers can surface errors instead of silently receiving []
+      throw err;
     }
   },
 
@@ -21,7 +22,7 @@ export const messageService = {
       return response.data.data;
     } catch (err) {
       console.warn("messageService.create failed:", err);
-      return null;
+      throw err;
     }
   },
   delete: async (id: string) => {
@@ -30,7 +31,7 @@ export const messageService = {
       return response.data;
     } catch (err) {
       console.warn("messageService.delete failed:", err);
-      return null;
+      throw err;
     }
   },
 };
