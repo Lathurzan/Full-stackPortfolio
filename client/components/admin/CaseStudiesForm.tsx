@@ -13,14 +13,17 @@ export default function CaseStudiesForm({ initial }: { initial?: any } = {}) {
   const [title, setTitle] = useState("");
   const [slug, setSlug] = useState("");
   const [overview, setOverview] = useState("");
+  const [description, setDescription] = useState("");
   const [problem, setProblem] = useState("");
   const [solution, setSolution] = useState("");
   const [architecture, setArchitecture] = useState("");
   const [challenges, setChallenges] = useState("");
   const [results, setResults] = useState("");
-  const [technologies, setTechnologies] = useState("");
+  const [technologies, setTechnologies] = useState<string[]>([]);
+  const [techInput, setTechInput] = useState("");
   const [githubUrl, setGithubUrl] = useState("");
   const [liveDemoUrl, setLiveDemoUrl] = useState("");
+  const [layout, setLayout] = useState<"left" | "right">("right");
 
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -32,13 +35,15 @@ export default function CaseStudiesForm({ initial }: { initial?: any } = {}) {
   const [loadingExisting, setLoadingExisting] = useState(false);
   const [selectedExistingUrl, setSelectedExistingUrl] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!initial) return;
 
     setTitle(initial.title || "");
     setSlug(initial.slug || "");
-    setOverview(initial.overview || "");
+  setOverview(initial.overview || initial.description || "");
+  setDescription(initial.description || initial.overview || "");
     setProblem(initial.problem || "");
     setSolution(initial.solution || "");
     setArchitecture(initial.architecture || "");
@@ -47,13 +52,18 @@ export default function CaseStudiesForm({ initial }: { initial?: any } = {}) {
 
     setTechnologies(
       Array.isArray(initial.technologies)
-        ? initial.technologies.join(", ")
-        : initial.technologies || ""
+        ? initial.technologies
+        : Array.isArray(initial.stack)
+        ? initial.stack
+        : initial.technologies
+        ? initial.technologies.toString().split(",").map((t: string) => t.trim()).filter(Boolean)
+        : []
     );
 
     setGithubUrl(initial.githubUrl || "");
     setLiveDemoUrl(initial.liveDemoUrl || "");
     setImagePreview(initial.image || null);
+  setLayout(initial.layout === "left" ? "left" : "right");
 
     return () => {
       // revoke any objectURL created previously
@@ -182,25 +192,29 @@ export default function CaseStudiesForm({ initial }: { initial?: any } = {}) {
           imageUrl;
       }
 
+      // ensure description is populated (server expects `description` field)
+      const finalDescription = description || overview || "";
+
+      // if slug is empty, generate a safe slug from title
+      const finalSlug = (slug || "").toString().trim() ||
+        title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+
       const payload: any = {
         title,
-        slug,
+        slug: finalSlug,
         overview,
+        description: finalDescription,
         problem,
         solution,
         architecture,
         challenges,
         results,
-        technologies: Array.isArray(technologies)
-          ? technologies
-          : (technologies || "")
-              .toString()
-              .split(",")
-              .map((t) => t.trim())
-              .filter(Boolean),
+  technologies: technologies,
+  stack: technologies,
         githubUrl,
         liveDemoUrl,
         image: imageUrl,
+  layout,
       };
 
       const existingId = initial?.id || initial?._id;
@@ -212,8 +226,24 @@ export default function CaseStudiesForm({ initial }: { initial?: any } = {}) {
         res = await caseStudyService.create(payload);
       }
 
-      // success - navigate back to admin list (or refresh)
-      router.push("/admin/casestudies");
+      // success - update local state with returned data and stay on page
+      if (res?.data) {
+        const d = res.data;
+        setTitle(d.title || title);
+        setSlug(d.slug || slug);
+        setOverview(d.overview || d.description || overview);
+        setDescription(d.description || d.overview || description);
+        setProblem(d.problem || problem);
+        setSolution(d.solution || solution);
+        setArchitecture(d.architecture || architecture);
+        setChallenges(d.challenges || challenges);
+        setResults(d.results || results);
+        const newTechs = Array.isArray(d.stack) ? d.stack : Array.isArray(d.technologies) ? d.technologies : [];
+        setTechnologies(newTechs);
+        setImagePreview(d.image || imagePreview);
+      }
+      setSuccessMessage("Saved");
+      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (error) {
       // keep it simple: log + alert
       // server errors should be inspected in console
@@ -234,12 +264,14 @@ export default function CaseStudiesForm({ initial }: { initial?: any } = {}) {
       onSubmit={handleSave}
       className="space-y-6 rounded-2xl border border-slate-800 bg-slate-900/60 p-6"
     >
+      <label className="mb-2 block text-sm text-slate-400">Title</label>
       <input
         placeholder="Title"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         className={inputClass}
       />
+      <label className="mb-2 block text-sm text-slate-400">Slug</label>
 
       <input
         placeholder="Slug"
@@ -247,6 +279,7 @@ export default function CaseStudiesForm({ initial }: { initial?: any } = {}) {
         onChange={(e) => setSlug(e.target.value)}
         className={inputClass}
       />
+      <label className="mb-2 block text-sm text-slate-400">Overview</label>
 
       <textarea
         rows={4}
@@ -255,6 +288,7 @@ export default function CaseStudiesForm({ initial }: { initial?: any } = {}) {
         onChange={(e) => setOverview(e.target.value)}
         className={inputClass}
       />
+      <label className="mb-2 block text-sm text-slate-400">Problem</label>
 
       <textarea
         rows={4}
@@ -263,6 +297,7 @@ export default function CaseStudiesForm({ initial }: { initial?: any } = {}) {
         onChange={(e) => setProblem(e.target.value)}
         className={inputClass}
       />
+      <label className="mb-2 block text-sm text-slate-400">Solution</label>
 
       <textarea
         rows={4}
@@ -271,6 +306,7 @@ export default function CaseStudiesForm({ initial }: { initial?: any } = {}) {
         onChange={(e) => setSolution(e.target.value)}
         className={inputClass}
       />
+      <label className="mb-2 block text-sm text-slate-400">Architecture</label>
 
       <textarea
         rows={4}
@@ -279,6 +315,7 @@ export default function CaseStudiesForm({ initial }: { initial?: any } = {}) {
         onChange={(e) => setArchitecture(e.target.value)}
         className={inputClass}
       />
+      <label className="mb-2 block text-sm text-slate-400">Challenges</label>
 
       <textarea
         rows={4}
@@ -287,6 +324,8 @@ export default function CaseStudiesForm({ initial }: { initial?: any } = {}) {
         onChange={(e) => setChallenges(e.target.value)}
         className={inputClass}
       />
+      <label className="mb-2 block text-sm text-slate-400">Results</label>
+
 
       <textarea
         rows={4}
@@ -295,13 +334,58 @@ export default function CaseStudiesForm({ initial }: { initial?: any } = {}) {
         onChange={(e) => setResults(e.target.value)}
         className={inputClass}
       />
+      <label className="mb-2 block text-sm text-slate-400">Technologies</label>
 
-      <input
-        placeholder="Technologies (comma separated)"
-        value={technologies}
-        onChange={(e) => setTechnologies(e.target.value)}
-        className={inputClass}
-      />
+      <div>
+        <label className="mb-2 block text-sm text-slate-400">Technologies</label>
+        <div className="flex gap-2">
+          <input
+            placeholder="Add technology"
+            value={techInput}
+            onChange={(e) => setTechInput(e.target.value)}
+            className={inputClass + " flex-1"}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const val = techInput.trim();
+                if (val && !technologies.includes(val)) {
+                  setTechnologies([...technologies, val]);
+                }
+                setTechInput("");
+              }
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              const val = techInput.trim();
+              if (!val) return;
+              if (!technologies.includes(val)) setTechnologies([...technologies, val]);
+              setTechInput("");
+            }}
+            className="rounded-full bg-blue-600 px-4 py-2 text-sm text-white"
+          >
+            Add
+          </button>
+        </div>
+
+        <div className="mt-3 flex flex-wrap gap-2">
+          {technologies.map((tech) => (
+            <span key={tech} className="inline-flex items-center gap-2 rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">
+              <span>{tech}</span>
+              <button
+                type="button"
+                onClick={() => setTechnologies(technologies.filter((t) => t !== tech))}
+                className="ml-1 rounded-full bg-slate-800 px-2 py-0.5 text-xs"
+                aria-label={`Remove ${tech}`}
+              >
+                ×
+              </button>
+            </span>
+          ))}
+        </div>
+      </div>
+      <label className="mb-2 block text-sm text-slate-400">GitHub URL</label>
 
       <input
         placeholder="GitHub URL"
@@ -309,6 +393,7 @@ export default function CaseStudiesForm({ initial }: { initial?: any } = {}) {
         onChange={(e) => setGithubUrl(e.target.value)}
         className={inputClass}
       />
+      <label className="mb-2 block text-sm text-slate-400">Live Demo URL</label>
 
       <input
         placeholder="Live Demo URL"
@@ -316,6 +401,20 @@ export default function CaseStudiesForm({ initial }: { initial?: any } = {}) {
         onChange={(e) => setLiveDemoUrl(e.target.value)}
         className={inputClass}
       />
+      <div className="mt-4">
+        <label className="mb-2 block text-sm text-slate-400">Layout</label>
+        <div className="flex items-center gap-4">
+          <label className="inline-flex items-center gap-2 text-sm">
+            <input type="radio" name="layout" value="left" checked={layout === "left"} onChange={() => setLayout("left")} />
+            <span className="text-slate-200">Image left</span>
+          </label>
+
+          <label className="inline-flex items-center gap-2 text-sm">
+            <input type="radio" name="layout" value="right" checked={layout === "right"} onChange={() => setLayout("right")} />
+            <span className="text-slate-200">Image right</span>
+          </label>
+        </div>
+      </div>
 
       <div className="space-y-2">
         <div className="flex items-center gap-3">

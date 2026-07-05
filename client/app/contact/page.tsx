@@ -19,13 +19,17 @@ export default function ContactPage() {
     }
     try {
       setLoading(true);
-      await messageService.create({ name, email, message });
-      setFeedback("Message sent — thank you!");
-      setName("");
-      setEmail("");
-      setMessage("");
+      const res = await messageService.create({ name, email, message });
+      if (!res) {
+        setFeedback("Failed to send message");
+      } else {
+        setFeedback("Message sent — thank you!");
+        setName("");
+        setEmail("");
+        setMessage("");
+      }
     } catch (err: any) {
-      setFeedback(err?.response?.data?.message || "Failed to send message");
+      setFeedback(err?.response?.data?.message || err?.message || "Failed to send message");
     } finally {
       setLoading(false);
     }

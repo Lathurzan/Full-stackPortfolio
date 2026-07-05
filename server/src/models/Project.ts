@@ -22,6 +22,27 @@ const projectSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    // Accept multiple categories for a project. Stored as an array of strings.
+    category: {
+      type: [String],
+      default: [],
+    },
+    startDate: {
+      type: String,
+      default: "",
+    },
+    endDate: {
+      type: String,
+      default: "",
+    },
+    keyFeatures: {
+      type: [String],
+      default: [],
+    },
+    highlights: {
+      type: String,
+      default: "",
+    },
     githubUrl: {
       type: String,
       default: "",
@@ -32,9 +53,11 @@ const projectSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ["Draft", "Published"],
+      enum: ["Draft", "Published", "Featured"],
       default: "Draft",
     },
+    suggestedCategory: { type: String, default: "" },
+    suggestedDescription: { type: String, default: "" },
   },
   {
     timestamps: true,

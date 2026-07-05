@@ -1,5 +1,4 @@
 import CaseStudiesForm from "@/components/admin/CaseStudiesForm";
-import ProjectForm from "@/components/admin/CaseStudiesForm";
 
 export default function EditCaseStudyPage() {
   return (

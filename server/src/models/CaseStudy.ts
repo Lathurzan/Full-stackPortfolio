@@ -18,6 +18,8 @@ const caseStudySchema = new mongoose.Schema(
     results: { type: String, default: "" },
     githubUrl: { type: String, default: "" },
     liveDemoUrl: { type: String, default: "" },
+  // layout determines whether the image appears on the left or right in the UI
+  layout: { type: String, enum: ["left", "right"], default: "right" },
   },
   { timestamps: true }
 );
