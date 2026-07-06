@@ -8,5 +8,5 @@ export const env = {
   MONGO_URI: process.env.MONGO_URI || "",
   JWT_SECRET: process.env.JWT_SECRET || "secret",
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || "7d",
-  CLIENT_URL: process.env.CLIENT_URL || "http://localhost:3000",
+  CLIENT_URL: process.env.CLIENT_URL || "https://full-stack-portfolio-vert-ten.vercel.app",
 };
