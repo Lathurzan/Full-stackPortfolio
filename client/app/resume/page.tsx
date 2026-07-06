@@ -9,7 +9,7 @@ export default function ResumePage() {
   const [loading, setLoading] = useState(true);
   const [noResume, setNoResume] = useState(false);
 
-  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api").replace(/\/$/, "");
+  const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/$/, "");
   const proxySrc = apiBase.endsWith("/api")
     ? `${apiBase}/resume/proxy`
     : `${apiBase}/api/resume/proxy`;

@@ -8,6 +8,8 @@ import { ArrowRight, Download, Sparkles } from "lucide-react";
 import { fetchProfile } from "@/services/profile.service";
 import { s } from "framer-motion/client";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL;
+
 function ProfileHeaderRole() {
   const [text, setText] = useState<string | null>(null);
 
@@ -137,7 +139,7 @@ function ProfileImage() {
           // Resolve relative paths (e.g. /uploads/...) to an absolute URL
           let resolved = img.trim();
           if (!/^https?:\/\//i.test(resolved)) {
-            const apiBase = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api").replace(/\/api\/?$/, "");
+            const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api\/?$/, "");
             resolved = resolved.startsWith("/")
               ? `${apiBase}${resolved}`
               : `${apiBase}/uploads/${resolved}`;
@@ -204,8 +206,7 @@ export default function Hero() {
                     if (!/\/api(\/|$)/.test(apiEnv)) candidates.push(`${apiEnv}/api/resume`)
                   }
                   candidates.push(
-                    `http://localhost:5001/api/resume`,
-                   
+                    `${API_BASE}/api/resume`,
                   )
                   candidates.push(`/api/resume`)
 

@@ -1,7 +1,7 @@
 import ProjectsList from "../../components/project/ProjectsList";
 
 export const revalidate = 60;
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 export default async function ProjectsPage() {
   let projects: any[] = [];

@@ -12,11 +12,11 @@ type CaseStudy = {
 };
 
 export default async function CaseStudiesPage() {
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
 
   let items: CaseStudy[] = [];
     try {
-    const res = await fetch(`${apiBase}/api/casestudies`, { next: { revalidate: 60 } });
+    const res = await fetch(`${apiBase}/casestudies`, { next: { revalidate: 60 } });
     const json = await res.json();
     // sort client-side by title to ensure stable ordering across requests
     items = (json?.data ?? []).sort((a: CaseStudy, b: CaseStudy) => a.title.localeCompare(b.title));

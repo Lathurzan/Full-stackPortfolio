@@ -22,7 +22,7 @@ export default function AdminWorkExperiancePage() {
   const companyRef = useRef<HTMLInputElement | null>(null);
   const [newBullet, setNewBullet] = useState("");
 
-  const API_URL = (process.env.NEXT_PUBLIC_API_URL as string) || "http://localhost:5001/api";
+  const API_URL = (process.env.NEXT_PUBLIC_API_URL as string) || "";
   const apiBase = `${API_URL}/work-experiences`;
 
   const load = async () => {

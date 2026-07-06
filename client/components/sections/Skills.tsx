@@ -1,6 +1,6 @@
 
 export default async function Skills() {
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
   let skillGroups: Array<{ category: string; items: string[] }> = [];
   try {

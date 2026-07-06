@@ -22,7 +22,7 @@ function normalize(s: string) {
 }
 
 async function fetchCaseStudy(slugOrId: string): Promise<CaseStudy | null> {
-  const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || "";
   const slugNorm = normalize(slugOrId);
 
   // If the param looks like a Mongo ObjectId, try direct lookup first —
@@ -30,7 +30,7 @@ async function fetchCaseStudy(slugOrId: string): Promise<CaseStudy | null> {
   const isObjectId = /^[0-9a-fA-F]{24}$/.test(slugOrId);
   if (isObjectId) {
     try {
-      const res = await fetch(`${apiBase}/api/casestudies/${slugOrId}`, { next: { revalidate: 60 } });
+      const res = await fetch(`${apiBase}/casestudies/${slugOrId}`, { next: { revalidate: 60 } });
       if (res.ok) {
         const json = await res.json();
         // api may return { success, data } or the raw object
@@ -44,12 +44,12 @@ async function fetchCaseStudy(slugOrId: string): Promise<CaseStudy | null> {
 
   // Try server list endpoint and match tolerant
   try {
-    const res = await fetch(`${apiBase}/api/casestudies`, { next: { revalidate: 60 } });
+    const res = await fetch(`${apiBase}/casestudies`, { next: { revalidate: 60 } });
     const json = await res.json().catch((e) => {
       console.error("fetchCaseStudy: failed to parse list json", e);
       return null;
     });
-    console.log("fetchCaseStudy: list fetch", { ok: res.ok, status: res.status, url: `${apiBase}/api/casestudies`, slugOrId, slugNorm, jsonPreview: Array.isArray(json?.data) ? json.data.slice(0,3).map((x:any)=>({ _id: x._id, slug: x.slug, title: x.title })) : null });
+    console.log("fetchCaseStudy: list fetch", { ok: res.ok, status: res.status, url: `${apiBase}/casestudies`, slugOrId, slugNorm, jsonPreview: Array.isArray(json?.data) ? json.data.slice(0,3).map((x:any)=>({ _id: x._id, slug: x.slug, title: x.title })) : null });
     if (res.ok && json) {
       const items: CaseStudy[] = json?.data ?? [];
       const found = items.find((i) => {

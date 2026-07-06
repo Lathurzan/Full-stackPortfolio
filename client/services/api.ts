@@ -1,7 +1,6 @@
 import axios from "axios"
 
-const raw = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001";
-// Normalize: allow NEXT_PUBLIC_API_URL to be either the API root (http://host:port)
+const raw: string = process.env.NEXT_PUBLIC_API_URL ?? "";
 // or include a trailing /api. Ensure final baseURL ends with a single /api
 const API_ROOT = raw.replace(/\/api\/?$/i, "").replace(/\/$/, "");
 const API_URL = API_ROOT + "/api";

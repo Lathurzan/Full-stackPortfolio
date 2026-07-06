@@ -16,7 +16,7 @@ interface Blog {
 }
 
 const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "http://localhost:5001";
+  process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "";
 
 function normalizeImage(raw: unknown): string | undefined {
   if (!raw) return undefined;
@@ -44,7 +44,7 @@ export const revalidate = 60;
 
 async function fetchBlogs(): Promise<Blog[]> {
   try {
-  const res = await fetch(`${API_BASE}/api/blogs`, { next: { revalidate: 60 } });
+  const res = await fetch(`${API_BASE}/blogs`, { next: { revalidate: 60 } });
     if (!res.ok) return [];
 
     const json = await res.json();
