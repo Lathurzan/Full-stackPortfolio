@@ -6,7 +6,11 @@ import { authService } from "../../../services/auth.service";
 
 export default function AdminLoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState("");
+  // Optional local dev prefills (do not commit secrets to source)
+  const initialEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "";
+  const initialPassword = process.env.NEXT_PUBLIC_ADMIN_PASSWORD || "";
+
+  const [email, setEmail] = useState(initialEmail);
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -27,13 +31,14 @@ export default function AdminLoginPage() {
         if (typeof window !== "undefined") {
           localStorage.setItem("admin_token", res.token);
         }
-        // navigate to admin area
-        router.push("/admin");
+        // navigate to admin area (replace so back button doesn't return to login)
+        router.replace("/admin");
       } else {
         setError("Unexpected response from server");
       }
     } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || "Login failed");
+      const msg = err?.response?.data?.message || err?.message || "Login failed";
+      setError(String(msg));
     } finally {
       setLoading(false);
     }
@@ -71,13 +76,28 @@ export default function AdminLoginPage() {
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className={`w-full rounded-full bg-blue-600 py-3 font-medium text-white hover:bg-blue-500 ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
-        >
-          {loading ? "Signing in…" : "Login"}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            type="submit"
+            disabled={loading}
+            className={`flex-1 rounded-full bg-blue-600 py-3 font-medium text-white hover:bg-blue-500 ${loading ? "opacity-60 cursor-not-allowed" : ""}`}
+          >
+            {loading ? "Signing in…" : "Login"}
+          </button>
+
+          {(initialEmail || initialPassword) ? (
+            <button
+              type="button"
+              onClick={() => {
+                setEmail(initialEmail);
+                if (initialPassword) setPassword(initialPassword);
+              }}
+              className="rounded-full border border-slate-700 bg-slate-800 px-3 py-2 text-sm text-slate-200"
+            >
+              Fill
+            </button>
+          ) : null}
+        </div>
       </form>
     </section>
   );

@@ -6,13 +6,26 @@ export const fetchLinks = async () => {
   const res = await publicApi.get(`/profile`);
   return res.data;
   } catch (err: any) {
-    // Log detailed error for debugging (status, url, response)
-    console.error("fetchLinks error:", {
-      message: err?.message,
-      status: err?.response?.status,
-      url: err?.config?.url,
-      data: err?.response?.data,
-    });
+    // Build a JSON-friendly error details object because some Error
+    // instances (like AxiosError) are not enumerable and may show up
+    // as empty objects in some consoles.
+    const details = {
+      message: err?.message ?? String(err),
+      code: err?.code ?? null,
+      status: err?.response?.status ?? null,
+      url: err?.config?.url ?? err?.request?.responseURL ?? null,
+      responseData: err?.response?.data ?? null,
+      stack: err?.stack ?? null,
+    };
+
+    try {
+      console.error("fetchLinks error:", JSON.stringify(details, null, 2));
+    } catch (e) {
+      // Fallback if stringify fails
+      console.error("fetchLinks error (raw):", details, err);
+    }
+
+    // Re-throw so callers can surface the error to the UI
     throw err;
   }
 };

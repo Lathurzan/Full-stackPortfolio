@@ -28,18 +28,20 @@ function getImageUrl(img?: string | null) {
   return img;
 }
 
+export const revalidate = 60;
+
 export default async function ProjectDetailsPage({ params }: Props) {
   const { slug } = (await params) as { slug: string };
 
   let project: any = null;
   try {
     // direct lookup (by slug or id)
-    const directRes = await fetch(`${API_URL}/projects/${slug}`);
+    const directRes = await fetch(`${API_URL}/projects/${slug}`, { next: { revalidate: 60 } });
     project = directRes.ok ? (await directRes.json())?.data : null;
 
     if (!project) {
       // fetch list and attempt tolerant matching
-      const listRes = await fetch(`${API_URL}/projects`);
+      const listRes = await fetch(`${API_URL}/projects`, { next: { revalidate: 60 } });
       const list = listRes.ok ? (await listRes.json())?.data || [] : [];
 
       const target = normalizeSlug(slug);
@@ -58,6 +60,8 @@ export default async function ProjectDetailsPage({ params }: Props) {
       }) || null;
     }
   } catch (err) {
+    // Backend may be unreachable during build; show not-found client-side rather than crashing prerender
+    console.warn("ProjectDetailsPage: fetch failed during render", err);
     project = null;
   }
 

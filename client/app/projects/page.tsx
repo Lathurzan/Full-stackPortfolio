@@ -1,12 +1,20 @@
 import ProjectsList from "../../components/project/ProjectsList";
 
+export const revalidate = 60;
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5001/api";
 
 export default async function ProjectsPage() {
-  const res = await fetch(`${API_URL}/projects`);
-  const all = (res.ok && (await res.json())?.data) || [];
-  // exclude draft projects from the public listing
-  const projects = Array.isArray(all) ? all.filter((p: any) => (p?.status || "Published") !== "Draft") : [];
+  let projects: any[] = [];
+  try {
+    const res = await fetch(`${API_URL}/projects`, { next: { revalidate: 60 } });
+    const all = (res.ok && (await res.json())?.data) || [];
+    // exclude draft projects from the public listing
+    projects = Array.isArray(all) ? all.filter((p: any) => (p?.status || "Published") !== "Draft") : [];
+  } catch (err) {
+    // Backend unavailable at build-time — render an empty list and let client fill later if needed
+    console.warn("ProjectsPage: failed to fetch projects during render", err);
+    projects = [];
+  }
 
   return (
     <section className="min-h-screen px-6 py-24 md:px-12 lg:px-24">

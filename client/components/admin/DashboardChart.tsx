@@ -25,7 +25,7 @@ export default function DashboardChart({
     <div className="h-[350px] w-full rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
       <h2 className="mb-6 text-xl font-semibold text-white">Visitor Analytics</h2>
 
-      <ResponsiveContainer width="100%" height="85%">
+  <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
           <XAxis dataKey={xKey} stroke="#94a3b8" />

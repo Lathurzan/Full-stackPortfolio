@@ -46,7 +46,7 @@ export default function ResumePage() {
           <button
             onClick={async () => {
               try {
-                const r = await fetch(`${proxySrc}?dl=1`, { cache: "no-store" });
+                const r = await fetch(`${proxySrc}?dl=1`);
                 if (!r.ok) throw new Error("Download failed");
                 const blob = await r.blob();
                 const href = URL.createObjectURL(blob);

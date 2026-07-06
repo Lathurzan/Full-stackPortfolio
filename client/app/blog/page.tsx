@@ -40,9 +40,11 @@ function normalizeImage(raw: unknown): string | undefined {
   return image;
 }
 
+export const revalidate = 60;
+
 async function fetchBlogs(): Promise<Blog[]> {
   try {
-    const res = await fetch(`${API_BASE}/api/blogs`, { cache: "no-store" });
+  const res = await fetch(`${API_BASE}/api/blogs`, { next: { revalidate: 60 } });
     if (!res.ok) return [];
 
     const json = await res.json();

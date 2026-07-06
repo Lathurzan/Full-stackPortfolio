@@ -213,7 +213,7 @@ export default function Hero() {
                   let foundUrl: string | null = null
                   for (const url of candidates) {
                     try {
-                      const r = await fetch(url, { cache: "no-store" })
+                      const r = await fetch(url, { next: { revalidate: 60 } })
                       if (!r.ok) continue
                       const ct = r.headers.get("content-type") || ""
                       if (ct.includes("application/json")) {
@@ -256,7 +256,7 @@ export default function Hero() {
 
                   // Try to fetch the file as a blob and force download. If CORS blocks it, fallback to opening the viewer.
                   try {
-                    const r = await fetch(finalUrl, { cache: "no-store" })
+                    const r = await fetch(finalUrl, { next: { revalidate: 60 } })
                     if (!r.ok) throw new Error("Download failed")
                     const blob = await r.blob()
                     const href = URL.createObjectURL(blob)
