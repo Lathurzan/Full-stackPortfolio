@@ -65,14 +65,12 @@ export default function AdminAnalyticsPage() {
         <div className="grid gap-6 md:grid-cols-2 mt-6">
           <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
             <h2 className="mb-4 text-xl font-semibold">Visitors (last 30 days)</h2>
-            <ClientOnlyChart importPath="@/components/admin/VisitorsChart" height={280}>
-              {/* VisitorsChart accepts props via dynamic import - props passed by wrapper are not forwarded, so we'll mount a small client component instead */}
-            </ClientOnlyChart>
+            <ClientOnlyChart chartType="VisitorsChart" height={280} data={lineData} series={series} />
           </div>
 
           <div className="rounded-2xl border border-slate-800 bg-slate-900/60 p-6">
             <h2 className="mb-4 text-xl font-semibold">Totals</h2>
-            <ClientOnlyChart importPath="@/components/admin/TotalsChart" height={280} />
+            <ClientOnlyChart chartType="TotalsChart" height={280} totals={totals} />
           </div>
         </div>
       )}
