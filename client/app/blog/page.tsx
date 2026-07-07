@@ -15,6 +15,8 @@ interface Blog {
   author?: string;
 }
 
+import Link from "next/link";
+
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL || process.env.API_URL || "";
 
@@ -92,7 +94,7 @@ export default async function BlogPage() {
 
   return (
     <section className="min-h-screen px-6 py-24 md:px-12 lg:px-24">
-      <div className="mx-auto max-w-4xl">
+      <div className="mx-auto max-w-7xl">
         <p className="mb-3 text-sm font-semibold uppercase tracking-widest text-blue-400">
           Blog
         </p>
@@ -104,79 +106,55 @@ export default async function BlogPage() {
               No blog posts found. The blog listing is populated from the backend.
             </div>
           ) : (
-            blogs.map((blog) => {
+            blogs.map((blog, idx) => {
               const key = blog._id ?? blog.slug ?? blog.title;
+              const href = `/blog/${blog.slug ?? blog._id}`;
               const excerpt =
                 blog.excerpt ??
                 blog.description ??
                 (blog.content ? `${blog.content.slice(0, 160)}…` : "");
+              const reverse = idx % 2 !== 0;
 
               return (
-                <article
-                  key={key}
-                  aria-labelledby={`post-${key}`}
-                  className="group rounded-3xl border border-slate-800 bg-slate-900/60 p-6 transition-shadow duration-150 hover:shadow-lg focus-within:ring-2 focus-within:ring-blue-500/30"
-                >
-                  <div className="flex flex-col gap-6 lg:flex-row lg:items-center">
-                    {/* Thumbnail / image */}
-                    {blog.image ? (
-                      <div className="w-full overflow-hidden rounded-2xl lg:w-[40%] lg:flex-shrink-0">
+                <article key={key} className="rounded-3xl border border-slate-800 bg-slate-900/60 p-8 transition hover:border-blue-500">
+                  <div
+                    className={`grid grid-cols-1 items-center gap-10 lg:grid-cols-2 ${
+                      reverse ? "lg:[&>*:first-child]:order-2" : ""
+                    }`}
+                  >
+                    {/* Content */}
+                    <div className="space-y-5">
+                      <Link href={href} className="text-2xl font-bold text-white hover:underline">
+                        {blog.title}
+                      </Link>
+
+                      <p className="text-slate-400">{excerpt}</p>
+
+                      <div className="flex flex-wrap gap-2">
+                        {(blog.tags || []).map((t) => (
+                          <span key={t} className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300">
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="flex items-center gap-3">
+                        <Link href={href} className="rounded-full bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-500">
+                          Learn more
+                        </Link>
+                      </div>
+                    </div>
+
+                    {/* Image */}
+                    <div className="overflow-hidden rounded-2xl">
+                      <Link href={href}>
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={blog.image}
+                          src={blog.image || "/images/placeholder.png"}
                           alt={blog.title}
-                          className="aspect-video w-full rounded-2xl object-cover transition duration-300 group-hover:scale-105"
+                          className="h-72 w-full rounded-2xl object-cover transition duration-500 hover:scale-105"
                         />
-                      </div>
-                    ) : (
-                      <div
-                        className="aspect-video w-full overflow-hidden rounded-2xl bg-slate-800 lg:w-[40%] lg:flex-shrink-0"
-                        aria-hidden
-                      />
-                    )}
-
-                    {/* Content */}
-                    <div className="flex flex-1 flex-col">
-                      <h2
-                        id={`post-${key}`}
-                        className="text-xl font-semibold leading-snug text-white md:text-2xl"
-                      >
-                        {blog.title}
-                      </h2>
-
-                      {/* Meta row directly under the title */}
-                      <div className="mt-1.5 flex items-center gap-2 text-xs text-slate-500">
-                        <span className="text-slate-400">{blog.author ?? "Author"}</span>
-                        <span aria-hidden>·</span>
-                        <span>{formatDate(blog.publishedAt ?? blog.createdAt)}</span>
-                        {blog.status ? (
-                          <>
-                            <span aria-hidden>·</span>
-                            <span className="rounded-full bg-yellow-700/30 px-2 py-0.5 text-yellow-300">
-                            </span>
-                          </>
-                        ) : null}
-                      </div>
-
-                      <p className="mt-3 text-sm leading-relaxed text-slate-400 line-clamp-2">
-                        {excerpt}
-                      </p>
-                       <p className="mt-3 text-sm leading-relaxed text-slate-400 line-clamp-2">
-                        {blog.content}
-                      </p>
-
-                      {(blog.tags || []).length > 0 ? (
-                        <div className="mt-auto flex flex-wrap gap-2 pt-4">
-                          {(blog.tags || []).map((t) => (
-                            <span
-                              key={t}
-                              className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300"
-                            >
-                              {t}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
+                      </Link>
                     </div>
                   </div>
                 </article>

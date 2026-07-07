@@ -31,6 +31,7 @@ export default function AdminSkillsPage() {
     setGroups((s) => {
       const copy = [...s];
       // avoid duplicates
+      if (!Array.isArray(copy[groupIndex].items)) copy[groupIndex].items = [];
       if (copy[groupIndex].items.includes(val)) return copy;
       copy[groupIndex].items = [...copy[groupIndex].items, val];
       return copy;
@@ -40,6 +41,27 @@ export default function AdminSkillsPage() {
       delete copy[groupIndex];
       return copy;
     });
+  };
+
+  const saveGroup = async (gIdx: number) => {
+    const g = groups[gIdx];
+    if (!g) return;
+    const payload = { category: g.category, items: Array.isArray(g.items) ? g.items : [] };
+    try {
+      const id = (g._id || g.id) ?? null;
+      if (id) {
+        await skillService.update(id, payload);
+      } else {
+        const res = await skillService.create(payload);
+        const created = res?.data ?? res;
+        if (created) {
+          // replace the local group with the created result (to pick up _id)
+          setGroups((s) => s.map((item, i) => (i === gIdx ? created : item)));
+        }
+      }
+    } catch (err) {
+      console.error("Failed to save group", err);
+    }
   };
 
   const removeGroup = (gIdx: number) => {
@@ -98,7 +120,10 @@ export default function AdminSkillsPage() {
           <div key={g._id || g.id || g.category || gi} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
             <div className="mb-3 flex items-center justify-between">
               <h3 className="font-semibold">{g.category}</h3>
-              <button onClick={() => removeGroup(gi)} className="text-sm text-red-400 hover:text-red-300">Delete</button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => saveGroup(gi)} className="text-sm rounded-full bg-emerald-600 px-3 py-1 text-emerald-100 hover:bg-emerald-500">Save</button>
+                <button onClick={() => removeGroup(gi)} className="text-sm text-red-400 hover:text-red-300">Delete</button>
+              </div>
             </div>
             <ul className="mb-3 flex flex-wrap gap-2">
               {(g.items || []).map((it: any, i: number) => (

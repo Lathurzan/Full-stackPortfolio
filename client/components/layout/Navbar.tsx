@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Menu } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import React, { useState } from "react";
 
 function GitHubIcon(props: React.SVGProps<SVGSVGElement>) {
@@ -34,6 +34,10 @@ const navLinks = [
 ];
 
 export default function Navbar() {
+  const [open, setOpen] = useState(false);
+
+  const handleClose = () => setOpen(false);
+
   return (
     <header className="sticky top-0 z-50 border-b border-slate-800 bg-[#0B0F19]/80 backdrop-blur-xl">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
@@ -74,9 +78,46 @@ export default function Navbar() {
 </Link>
         </div>
 
-        <button className="md:hidden">
-          <Menu className="h-6 w-6" />
-        </button>
+        <div className="md:hidden">
+          <button
+            aria-label={open ? "Close menu" : "Open menu"}
+            aria-expanded={open}
+            aria-controls="mobile-menu"
+            onClick={() => setOpen((s) => !s)}
+            className="rounded-md p-2"
+          >
+            {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+          </button>
+        </div>
+        {open ? (
+          <div id="mobile-menu" className="absolute left-0 right-0 top-full z-50 border-b border-slate-800 bg-[#0B0F19] md:hidden">
+            <div className="mx-auto max-w-3xl px-6 py-4">
+              <div className="flex flex-col gap-3">
+                {navLinks.map((link) => (
+                  <Link key={link.name} href={link.href} onClick={handleClose} className="block rounded-md px-3 py-2 text-base text-slate-300 hover:bg-slate-800 hover:text-white">
+                    {link.name}
+                  </Link>
+                ))}
+
+                <div className="mt-2 flex flex-col gap-2">
+                  <div className="flex items-center gap-4">
+                    <Link href="https://github.com/Lathurzan" target="_blank" aria-label="GitHub" onClick={handleClose} className="text-slate-300 hover:text-white">
+                      <GitHubIcon className="h-5 w-5" />
+                    </Link>
+
+                    <Link href="https://linkedin.com/in/lathurzan-subatharan" target="_blank" aria-label="LinkedIn" onClick={handleClose} className="text-slate-300 hover:text-white">
+                      <LinkedInIcon className="h-5 w-5" />
+                    </Link>
+                  </div>
+
+                  <Link href="/resume" onClick={handleClose} className="mt-2 inline-block rounded-full bg-blue-600 px-5 py-2 text-sm font-medium text-white hover:bg-blue-500">
+                    Resume
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : null}
       </nav>
     </header>
   );

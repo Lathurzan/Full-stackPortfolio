@@ -10,6 +10,10 @@ type Work = {
   endDate?: string;
   description?: string;
   bullets?: string[];
+  location?: string;
+  companyWebsite?: string;
+  employmentType?: string;
+  technologies?: string[];
 };
 
 export default function AdminWorkExperiancePage() {
@@ -18,9 +22,12 @@ export default function AdminWorkExperiancePage() {
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
 
   const empty: Work = { company: "", role: "", startDate: "", endDate: "", description: "", bullets: [] };
+  // ensure empty arrays for new fields
+  empty.technologies = [];
   const [draft, setDraft] = useState<Work>(empty);
   const companyRef = useRef<HTMLInputElement | null>(null);
   const [newBullet, setNewBullet] = useState("");
+  const [newTech, setNewTech] = useState("");
 
   const API_URL = (process.env.NEXT_PUBLIC_API_URL as string) || "";
   const apiBase = `${API_URL}/work-experiences`;
@@ -33,7 +40,14 @@ export default function AdminWorkExperiancePage() {
   let data: any = null;
   try { data = text ? JSON.parse(text) : null; } catch (e) { console.warn("Failed to parse work-experiences response:", e, text.slice(0,200)); }
   const arr = Array.isArray(data) ? data : data?.data ?? [];
-  const normalized = arr.map((w: any) => ({ ...(w || {}), bullets: Array.isArray(w?.bullets) ? w.bullets : [] }));
+  const normalized = arr.map((w: any) => ({
+    ...(w || {}),
+    bullets: Array.isArray(w?.bullets) ? w.bullets : [],
+    technologies: Array.isArray(w?.technologies) ? w.technologies : [],
+    location: w?.location ?? "",
+    companyWebsite: w?.companyWebsite ?? "",
+    employmentType: w?.employmentType ?? "",
+  }));
   setWorks(normalized);
     } catch (err) {
   console.error("Failed to load work experiences:", err);
@@ -162,6 +176,17 @@ export default function AdminWorkExperiancePage() {
     setDraft((d) => ({ ...d, bullets: (d.bullets || []).filter((_, idx) => idx !== i) }));
   };
 
+  const addTech = () => {
+    const val = (newTech || "").trim();
+    if (!val) return;
+    setDraft((d) => ({ ...d, technologies: [...(d.technologies || []), val] }));
+    setNewTech("");
+  };
+
+  const removeTech = (i: number) => {
+    setDraft((d) => ({ ...d, technologies: (d.technologies || []).filter((_, idx) => idx !== i) }));
+  };
+
   return (
     <div>
       <div className="mb-8 flex items-center justify-between">
@@ -180,6 +205,15 @@ export default function AdminWorkExperiancePage() {
               <div>
                 <div className="font-semibold">{w.role} @ {w.company}</div>
                 <div className="text-sm text-slate-400">{w.startDate || ""} — {w.endDate || "Present"}</div>
+                {(w.location || w.employmentType || w.companyWebsite) ? (
+                  <div className="mt-1 text-sm text-slate-400">
+                    {w.location ? <span className="mr-2">{w.location}</span> : null}
+                    {w.employmentType ? <span className="mr-2">{w.employmentType}</span> : null}
+                    {w.companyWebsite ? (
+                      <a href={w.companyWebsite} target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">Website</a>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
                   <div className="flex items-center gap-2">
                     <button type="button" onClick={() => startEdit(i)} className="text-sm text-blue-400">Edit</button>
@@ -200,9 +234,12 @@ export default function AdminWorkExperiancePage() {
           <div className="grid grid-cols-2 gap-3">
             <input ref={companyRef} value={draft.company} onChange={(e) => setDraft((d) => ({ ...d, company: e.target.value }))} placeholder="Company" className="rounded-xl border border-slate-700 bg-[#0B0F19] px-3 py-2 text-sm" />
             <input value={draft.role} onChange={(e) => setDraft((d) => ({ ...d, role: e.target.value }))} placeholder="Role" className="rounded-xl border border-slate-700 bg-[#0B0F19] px-3 py-2 text-sm" />
-            <input value={draft.startDate} onChange={(e) => setDraft((d) => ({ ...d, startDate: e.target.value }))} placeholder="Start date" className="rounded-xl border border-slate-700 bg-[#0B0F19] px-3 py-2 text-sm" />
-            <input value={draft.endDate} onChange={(e) => setDraft((d) => ({ ...d, endDate: e.target.value }))} placeholder="End date" className="rounded-xl border border-slate-700 bg-[#0B0F19] px-3 py-2 text-sm" />
-            <textarea value={draft.description} onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))} placeholder="Short description" className="col-span-2 min-h-[80px] rounded-xl border border-slate-700 bg-[#0B0F19] px-3 py-2 text-sm" />
+              <input value={draft.location} onChange={(e) => setDraft((d) => ({ ...d, location: e.target.value }))} placeholder="Location" className="rounded-xl border border-slate-700 bg-[#0B0F19] px-3 py-2 text-sm" />
+              <input value={draft.companyWebsite} onChange={(e) => setDraft((d) => ({ ...d, companyWebsite: e.target.value }))} placeholder="Company website" className="rounded-xl border border-slate-700 bg-[#0B0F19] px-3 py-2 text-sm" />
+              <input value={draft.startDate} onChange={(e) => setDraft((d) => ({ ...d, startDate: e.target.value }))} placeholder="Start date" className="rounded-xl border border-slate-700 bg-[#0B0F19] px-3 py-2 text-sm" />
+              <input value={draft.endDate} onChange={(e) => setDraft((d) => ({ ...d, endDate: e.target.value }))} placeholder="End date" className="rounded-xl border border-slate-700 bg-[#0B0F19] px-3 py-2 text-sm" />
+              <input value={draft.employmentType} onChange={(e) => setDraft((d) => ({ ...d, employmentType: e.target.value }))} placeholder="Employment type (e.g. Full-time)" className="col-span-2 rounded-xl border border-slate-700 bg-[#0B0F19] px-3 py-2 text-sm" />
+              <textarea value={draft.description} onChange={(e) => setDraft((d) => ({ ...d, description: e.target.value }))} placeholder="Short description" className="col-span-2 min-h-[80px] rounded-xl border border-slate-700 bg-[#0B0F19] px-3 py-2 text-sm" />
           </div>
 
           <div className="mt-3">
@@ -215,6 +252,22 @@ export default function AdminWorkExperiancePage() {
                 <span key={`d-${i}`} className="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1 text-sm">
                   {b}
                   <button onClick={() => removeBullet(i)} className="text-xs text-red-400">x</button>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4">
+            <label className="block text-sm text-slate-400 mb-2">Technologies used</label>
+            <div className="mb-2 flex items-center gap-2">
+              <input value={newTech} onChange={(e) => setNewTech(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addTech(); } }} placeholder="Add technology and press Enter" className="flex-1 rounded-xl border border-slate-700 bg-[#0B0F19] px-3 py-2 text-sm" />
+              <button onClick={addTech} className="rounded-full bg-blue-600 px-4 py-2 text-sm text-white">Add</button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {(draft.technologies || []).map((t, i) => (
+                <span key={`tech-${i}`} className="inline-flex items-center gap-2 rounded-full bg-slate-800 px-3 py-1 text-sm">
+                  {t}
+                  <button onClick={() => removeTech(i)} className="text-xs text-red-400">x</button>
                 </span>
               ))}
             </div>
