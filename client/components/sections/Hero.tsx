@@ -125,32 +125,44 @@ function ProfileFocus() {
 
 // Fetches `profile.image` from the backend; falls back to the local SVG.
 function ProfileImage() {
-  const [src, setSrc] = useState("/images/profile/profile.svg");
+  const [src, setSrc] = useState<string>('/images/profile/profile.svg');
 
   useEffect(() => {
     let mounted = true;
+
     (async () => {
       try {
         const res = await fetchProfile();
         if (!mounted) return;
-        const profile = res?.data || res;
-        const img: string | undefined = profile?.image;
-        if (img && img.trim()) {
-          // Resolve relative paths (e.g. /uploads/...) to an absolute URL
-          let resolved = img.trim();
-          if (!/^https?:\/\//i.test(resolved)) {
-            const apiBase = (process.env.NEXT_PUBLIC_API_URL || "").replace(/\/api\/?$/, "");
-            resolved = resolved.startsWith("/")
-              ? `${apiBase}${resolved}`
-              : `${apiBase}/uploads/${resolved}`;
-          }
-          setSrc(resolved);
+        const profile = res?.data ?? res;
+        const img = profile?.image;
+        if (!img || !String(img).trim()) return;
+
+        let resolved = String(img).trim();
+        if (!/^https?:\/\//i.test(resolved)) {
+          const apiBase = (process.env.NEXT_PUBLIC_API_URL || '').replace(/\/api\/?$/, '').replace(/\/$/, '');
+          if (resolved.startsWith('/')) resolved = `${apiBase}${resolved}`;
+          else resolved = `${apiBase}/uploads/${resolved}`;
         }
-      } catch {
+
+        // Try a HEAD request to ensure the image exists (may fail due to CORS, in which case we still set it)
+        try {
+          const head = await fetch(resolved, { method: 'HEAD' });
+          if (mounted && head.ok) setSrc(resolved);
+          else if (mounted && head.status === 405) setSrc(resolved); // some servers disallow HEAD but GET will work
+          else if (mounted) setSrc('/images/profile/profile.svg');
+        } catch (e) {
+          // CORS or network issue; still attempt to use resolved URL (browser may handle errors)
+          if (mounted) setSrc(resolved);
+        }
+      } catch (err) {
         // keep fallback
       }
     })();
-    return () => { mounted = false; };
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
@@ -162,6 +174,9 @@ function ProfileImage() {
       className="h-[520px] w-full object-cover"
       loading="eager"
       priority
+      onError={() => {
+        if (src !== '/images/profile/profile.svg') setSrc('/images/profile/profile.svg');
+      }}
     />
   );
 }
